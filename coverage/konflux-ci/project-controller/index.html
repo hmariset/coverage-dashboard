@@ -1,0 +1,923 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>controller: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/konflux-ci/project-controller/internal/controller/projectdevelopmentstream_controller.go (75.3%)</option>
+				
+				<option value="file1">github.com/konflux-ci/project-controller/internal/template/execute.go (75.0%)</option>
+				
+				<option value="file2">github.com/konflux-ci/project-controller/internal/template/resources.go (12.5%)</option>
+				
+				<option value="file3">github.com/konflux-ci/project-controller/internal/template/unstructured.go (87.3%)</option>
+				
+				<option value="file4">github.com/konflux-ci/project-controller/pkg/logr/eventr/eventr.go (85.7%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">/*
+Copyright 2024.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package controller
+
+import (
+        "context"
+        "fmt"
+
+        apierrors "k8s.io/apimachinery/pkg/api/errors"
+        metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+        "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+        "k8s.io/apimachinery/pkg/runtime"
+        "k8s.io/client-go/tools/record"
+        ctrl "sigs.k8s.io/controller-runtime"
+        "sigs.k8s.io/controller-runtime/pkg/client"
+        "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+        "sigs.k8s.io/controller-runtime/pkg/handler"
+        "sigs.k8s.io/controller-runtime/pkg/log"
+        "sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+        "github.com/go-logr/logr"
+        projctlv1beta1 "github.com/konflux-ci/project-controller/api/v1beta1"
+        "github.com/konflux-ci/project-controller/internal/ownership"
+        "github.com/konflux-ci/project-controller/internal/template"
+        "github.com/konflux-ci/project-controller/pkg/logr/eventr"
+        "github.com/konflux-ci/project-controller/pkg/logr/muxr"
+)
+
+const (
+        // ConditionTypeReady represents the Ready condition type
+        ConditionTypeReady = "Ready"
+)
+
+// ProjectDevelopmentStreamReconciler reconciles a ProjectDevelopmentStream object
+type ProjectDevelopmentStreamReconciler struct {
+        client.Client
+        Scheme   *runtime.Scheme
+        Recorder record.EventRecorder
+}
+
+//+kubebuilder:rbac:groups=projctl.konflux.dev,resources=projectdevelopmentstreams,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=projctl.konflux.dev,resources=projectdevelopmentstreams/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=projctl.konflux.dev,resources=projectdevelopmentstreams/finalizers,verbs=update
+
+//+kubebuilder:rbac:groups=projctl.konflux.dev,resources=projects,verbs=get;list;watch
+//+kubebuilder:rbac:groups=projctl.konflux.dev,resources=projectdevelopmentstreamtemplates,verbs=get;list;watch
+
+//+kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
+
+// Reconcile is part of the main kubernetes reconciliation loop which aims to
+// move the current state of the cluster closer to the desired state.
+// TODO(user): Modify the Reconcile function to compare the state specified by
+// the ProjectDevelopmentStream object against the actual cluster state, and then
+// perform operations to make the cluster state reflect the state specified by
+// the user.
+//
+// For more details, check Reconcile and its Result here:
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.0/pkg/reconcile
+func (r *ProjectDevelopmentStreamReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) <span class="cov8" title="1">{
+        _ = log.FromContext(ctx)
+
+        // TODO(user): your logic here
+        log := log.FromContext(ctx)
+
+        var pds projctlv1beta1.ProjectDevelopmentStream
+        if err := r.Get(ctx, req.NamespacedName, &amp;pds); err != nil </span><span class="cov0" title="0">{
+                log.Error(err, "Unable to fetch ProjectDevelopmentStream")
+                // we'll ignore not-found errors, since they can't be fixed by an immediate
+                // requeue (we'll need to wait for a new notification), and we can get them
+                // on deleted requests.
+                return ctrl.Result{}, client.IgnoreNotFound(err)
+        }</span>
+
+        <span class="cov8" title="1">log = log.WithValues("PDS name", pds.ObjectMeta.Name)
+        log = muxr.NewMuxLogger(log, eventr.NewEventr(r.Recorder, &amp;pds))
+        // Update context with the enriched logger so that setReadyCondition can use it
+        ctx = ctrl.LoggerInto(ctx, log)
+
+        // Set initial condition
+        _ = r.setReadyCondition(ctx, &amp;pds, metav1.ConditionUnknown, "Reconciling", "Reconciling ProjectDevelopmentStream")
+
+        // This is arguably better done in an admission hook, but its easier to test
+        // when doing this from the controller
+        if !r.checkProductOwnerRef(pds) </span><span class="cov8" title="1">{
+                log.Info("Setting ownerReference for ProductDevelopmentStream")
+                if err := r.setProductOwnerRef(ctx, &amp;pds); err != nil </span><span class="cov0" title="0">{
+                        log.Error(err, "Error setting product ownerReference for ProjectDevelopmentStream")
+                        // We treat the product association as a light requirement so we
+                        // continue to applying templates rather then quitting on error here
+                }</span> else<span class="cov8" title="1"> {
+                        // Since we modified the PDS object exit so another reconciliation
+                        // run can start with updated owner ref
+                        _ = r.setReadyCondition(ctx, &amp;pds, metav1.ConditionUnknown, "UpdatingOwnerRef", "Owner reference updated, re-reconciling")
+                        return ctrl.Result{}, nil
+                }</span>
+        }
+
+        <span class="cov8" title="1">var templateName string
+        if pds.Spec.Template == nil </span><span class="cov8" title="1">{
+                log.Info("No template is associated with this ProjectDevelopmentStream")
+                _ = r.setReadyCondition(ctx, &amp;pds, metav1.ConditionTrue, "NoTemplate", "ProjectDevelopmentStream ready (no template specified)")
+                return ctrl.Result{}, nil
+        }</span>
+        <span class="cov8" title="1">templateName = pds.Spec.Template.Name
+        log = log.WithValues("PDS Template", templateName)
+        ctx = ctrl.LoggerInto(ctx, log)
+
+        var pdst projctlv1beta1.ProjectDevelopmentStreamTemplate
+        templateKey := client.ObjectKey{Namespace: pds.GetNamespace(), Name: templateName}
+        if err := r.Get(ctx, templateKey, &amp;pdst); err != nil </span><span class="cov8" title="1">{
+                log.Error(err, "Failed to fetch template")
+                _ = r.setReadyCondition(ctx, &amp;pds, metav1.ConditionFalse, "TemplateFetchFailed", fmt.Sprintf("Failed to fetch template: %v", err))
+                return ctrl.Result{}, client.IgnoreNotFound(err)
+        }</span>
+
+        <span class="cov8" title="1">log.Info(fmt.Sprintf("Applying resources from ProjectDevelopmentStreamTemplate: %s", pdst.Name))
+        resources, err := template.MkResources(pds, pdst)
+        if err != nil </span><span class="cov8" title="1">{
+                log.Error(err, "Failed to generate resources from template")
+                _ = r.setReadyCondition(ctx, &amp;pds, metav1.ConditionFalse, "TemplateGenerationFailed", fmt.Sprintf("Failed to generate resources from template: %v", err))
+                // We return 'nil' error because there is not point retrying the
+                // reconcile loop
+                return ctrl.Result{}, nil
+        }</span>
+
+        <span class="cov8" title="1">var requeue bool
+        for _, resource := range resources </span><span class="cov8" title="1">{
+                log := log.WithValues(
+                        "apiVersion", resource.GetAPIVersion(),
+                        "kind", resource.GetKind(),
+                        "name", resource.GetName(),
+                )
+                log.V(1).Info("Creating/Updating resource")
+                ownership.AddMissingUIDs(ctx, r.Client, resource)
+                if len(resource.GetOwnerReferences()) &lt;= 0 </span><span class="cov8" title="1">{
+                        // If the resource does not have an owner set, use the PDS
+                        _ = controllerutil.SetOwnerReference(&amp;pds, resource, r.Scheme)
+                }</span>
+                <span class="cov8" title="1">requeue = requeue || r.createOrUpdateResource(ctx, log, resource)</span>
+        }
+
+        // Set final condition based on whether we need to requeue
+        <span class="cov8" title="1">if requeue </span><span class="cov0" title="0">{
+                _ = r.setReadyCondition(ctx, &amp;pds, metav1.ConditionUnknown, "ApplyingResources", "Resource conflicts detected, retrying")
+        }</span> else<span class="cov8" title="1"> {
+                _ = r.setReadyCondition(ctx, &amp;pds, metav1.ConditionTrue, "ResourcesApplied", "All resources applied successfully")
+        }</span>
+
+        <span class="cov8" title="1">return ctrl.Result{Requeue: requeue}, nil</span>
+}
+
+// Create or update the given resource. Returns true if there is an update
+// conflict for the resource and therefore the reconcile action should be
+// re-queued.
+func (r *ProjectDevelopmentStreamReconciler) createOrUpdateResource(ctx context.Context, log logr.Logger, resource *unstructured.Unstructured) bool <span class="cov8" title="1">{
+        err := r.Client.Patch(
+                ctx,
+                resource,
+                client.Apply, //nolint:staticcheck // deprecated: will be migrated to new Apply API in future
+                client.FieldOwner("projctl.konflux.dev"),
+                client.ForceOwnership,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                log.Error(err, fmt.Sprintf("Failed to create or update resource: %s [%s]", resource.GetName(), resource.GetKind()))
+                return apierrors.IsConflict(err)
+        }</span>
+        <span class="cov8" title="1">log.Info(fmt.Sprintf("Resource updated: %s [%s]", resource.GetName(), resource.GetKind()))
+        return false</span>
+}
+
+// Check wither the PDS ownerReference is already set to point to the right
+// product
+func (r *ProjectDevelopmentStreamReconciler) checkProductOwnerRef(pds projctlv1beta1.ProjectDevelopmentStream) bool <span class="cov8" title="1">{
+        projectName := pds.Spec.Project
+        if projectName == "" </span><span class="cov0" title="0">{
+                return true // We define an empty project field as having a reference
+        }</span>
+        <span class="cov8" title="1">projectGVK, _ := r.Client.GroupVersionKindFor(&amp;projctlv1beta1.Project{})
+        prjAPIVersion, prjKind := projectGVK.ToAPIVersionAndKind()
+        for _, ref := range pds.ObjectMeta.OwnerReferences </span><span class="cov8" title="1">{
+                if ref.APIVersion == prjAPIVersion &amp;&amp; ref.Kind == prjKind &amp;&amp; ref.Name == projectName </span><span class="cov8" title="1">{
+                        return true
+                }</span>
+        }
+        <span class="cov8" title="1">return false</span>
+}
+
+func (r *ProjectDevelopmentStreamReconciler) setProductOwnerRef(ctx context.Context, pds *projctlv1beta1.ProjectDevelopmentStream) error <span class="cov8" title="1">{
+        projectKey := client.ObjectKey{Namespace: pds.GetNamespace(), Name: pds.Spec.Project}
+        project := projctlv1beta1.Project{}
+        if err := r.Client.Get(ctx, projectKey, &amp;project); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if err := controllerutil.SetOwnerReference(&amp;project, pds, r.Scheme); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">return r.Client.Update(ctx, pds)</span>
+}
+
+// Returns a handler for collecting all dev streams that exist on the same namespace as
+// the object passed to the handler
+func getSameNSEventHandler(r *ProjectDevelopmentStreamReconciler) handler.EventHandler <span class="cov0" title="0">{
+        return handler.EnqueueRequestsFromMapFunc(
+                func(ctx context.Context, o client.Object) []reconcile.Request </span><span class="cov0" title="0">{
+                        lg := log.FromContext(ctx)
+
+                        // get all streams from current namespace
+                        list := projctlv1beta1.ProjectDevelopmentStreamList{}
+                        if err := r.Client.List(ctx, &amp;list, client.InNamespace(o.GetNamespace())); err != nil </span><span class="cov0" title="0">{
+                                lg.Error(err, "Failed listing dev streams in namespace")
+                                return nil
+                        }</span>
+                        <span class="cov0" title="0">ret := make([]reconcile.Request, len(list.Items))
+
+                        for i := range list.Items </span><span class="cov0" title="0">{
+                                ret[i] = reconcile.Request{NamespacedName: client.ObjectKeyFromObject(&amp;list.Items[i])}
+                        }</span>
+                        <span class="cov0" title="0">return ret</span>
+                },
+        )
+}
+
+// setReadyCondition sets the Ready condition and updates the status
+func (r *ProjectDevelopmentStreamReconciler) setReadyCondition(ctx context.Context, pds *projctlv1beta1.ProjectDevelopmentStream, status metav1.ConditionStatus, reason, message string) error <span class="cov8" title="1">{
+        log := log.FromContext(ctx)
+
+        condition := metav1.Condition{
+                Type:               ConditionTypeReady,
+                Status:             status,
+                ObservedGeneration: pds.Generation,
+                LastTransitionTime: metav1.Now(),
+                Reason:             reason,
+                Message:            message,
+        }
+
+        // Find and update existing Ready condition
+        for i, existing := range pds.Status.Conditions </span><span class="cov8" title="1">{
+                if existing.Type == ConditionTypeReady </span><span class="cov8" title="1">{
+                        // Preserve LastTransitionTime when status hasn't changed per Kubernetes API conventions.
+                        // LastTransitionTime should only update when the condition's status field transitions
+                        // (True/False/Unknown), not when reason or message changes.
+                        if existing.Status == status </span><span class="cov8" title="1">{
+                                condition.LastTransitionTime = existing.LastTransitionTime
+                        }</span>
+                        <span class="cov8" title="1">pds.Status.Conditions[i] = condition
+                        if err := r.Status().Update(ctx, pds); err != nil </span><span class="cov0" title="0">{
+                                log.Error(err, "Failed to update Ready condition", "reason", reason)
+                                return err
+                        }</span>
+                        <span class="cov8" title="1">return nil</span>
+                }
+        }
+
+        // Condition not found, append new one
+        <span class="cov8" title="1">pds.Status.Conditions = append(pds.Status.Conditions, condition)
+        if err := r.Status().Update(ctx, pds); err != nil </span><span class="cov0" title="0">{
+                log.Error(err, "Failed to update Ready condition", "reason", reason)
+                return err
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *ProjectDevelopmentStreamReconciler) SetupWithManager(mgr ctrl.Manager) error <span class="cov0" title="0">{
+        return ctrl.NewControllerManagedBy(mgr).
+                For(&amp;projctlv1beta1.ProjectDevelopmentStream{}).
+                Watches(
+                        &amp;projctlv1beta1.ProjectDevelopmentStreamTemplate{},
+                        getSameNSEventHandler(r),
+                ).
+                Watches(
+                        &amp;projctlv1beta1.Project{},
+                        getSameNSEventHandler(r),
+                ).
+                Complete(r)
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package template
+
+import (
+        "regexp"
+        "strings"
+        "text/template"
+)
+
+var nameFieldInvalidCharPattern = regexp.MustCompile("[^a-z0-9]")
+var templateFuncs = template.FuncMap{
+        "hyphenize": func(str string) string <span class="cov8" title="1">{
+                return nameFieldInvalidCharPattern.ReplaceAllString(str, "-")
+        }</span>,
+}
+
+// Execute the template given as a string and return the result as a string
+func executeTemplate(templateStr string, values map[string]string) (string, error) <span class="cov8" title="1">{
+        theTemplate, err := template.New("").Funcs(templateFuncs).Parse(templateStr)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+        <span class="cov8" title="1">var valueBuf strings.Builder
+        if err := theTemplate.Execute(&amp;valueBuf, values); err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+        <span class="cov8" title="1">return valueBuf.String(), nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package template
+
+import (
+        "fmt"
+        "regexp"
+        "strings"
+
+        projctlv1beta1 "github.com/konflux-ci/project-controller/api/v1beta1"
+        "github.com/konflux-ci/project-controller/internal/ownership"
+        "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+        apischema "k8s.io/apimachinery/pkg/runtime/schema"
+)
+
+//+kubebuilder:rbac:groups=appstudio.redhat.com,resources=applications,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=appstudio.redhat.com,resources=applications/finalizers,verbs=update
+//+kubebuilder:rbac:groups=appstudio.redhat.com,resources=components,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=appstudio.redhat.com,resources=imagerepositories,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=appstudio.redhat.com,resources=integrationtestscenarios,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=appstudio.redhat.com,resources=releaseplans,verbs=get;list;watch;create;update;patch;delete
+
+// List of resource types supported by templates and various details about how
+// to instantiate resources of those types. The list order determines the order
+// in which resources are created, which can be significant for e.g. creating
+// ownership relationships
+var supportedResourceTypes = []struct {
+        // The supported API group/version/kind values for this resource.
+        supportedAPIs []apischema.GroupVersionKind
+        // The list of template-able fields for the resource. Each member is a list
+        // of strings indicating the full path to the field
+        templateAbleFields [][]string
+        // Like templateAbleFields but for fields that contain k8s resource names.
+        // For such fields an error will be reported if the generated value does not
+        // match ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+        templateAbleNameFields [][]string
+        // Fields that should not be touched when applying templates. These fields
+        // will be preserved from existing resources and not created in new resources.
+        untouchableFields [][]string
+        // A field of the resource that points to its owner object. If nil, an
+        // owner record would not be set.
+        ownerNameField []string
+        // The owner object GVK. Will only be used if ownerNameField is not empty
+        ownerAPI apischema.GroupVersionKind
+        // The owner object should be marked as the controller
+        ownerIsController bool
+        // The owner object deletion should be blocked
+        ownerDeletionBlocked bool
+}{
+        {
+                supportedAPIs: []apischema.GroupVersionKind{
+                        {Group: "appstudio.redhat.com", Version: "v1alpha1", Kind: "Application"},
+                },
+                templateAbleNameFields: [][]string{
+                        {"metadata", "name"},
+                },
+                templateAbleFields: [][]string{
+                        {"spec", "displayName"},
+                },
+        },
+        {
+                supportedAPIs: []apischema.GroupVersionKind{
+                        {Group: "appstudio.redhat.com", Version: "v1alpha1", Kind: "Component"},
+                },
+                templateAbleNameFields: [][]string{
+                        {"metadata", "name"},
+                        {"spec", "application"},
+                        {"spec", "componentName"},
+                        {"spec", "build-nudges-ref", "[]"},
+                        {"metadata", "annotations", "mintmaker.appstudio.redhat.com/disabled"},
+                },
+                templateAbleFields: [][]string{
+                        {"spec", "source", "git", "context"},
+                        {"spec", "source", "git", "dockerfileUrl"},
+                        {"spec", "source", "git", "revision"},
+                        {"spec", "source", "git", "url"},
+                        {"metadata", "annotations", "git-provider"},
+                        {"metadata", "annotations", "git-provider-url"},
+                },
+                untouchableFields: [][]string{
+                        {"metadata", "annotations", "appstudio.openshift.io/request"},
+                },
+                ownerNameField: []string{"spec", "application"},
+                ownerAPI: apischema.GroupVersionKind{
+                        Group: "appstudio.redhat.com", Version: "v1alpha1", Kind: "Application",
+                },
+        },
+        {
+                supportedAPIs: []apischema.GroupVersionKind{
+                        {Group: "appstudio.redhat.com", Version: "v1alpha1", Kind: "ImageRepository"},
+                },
+                templateAbleNameFields: [][]string{
+                        {"metadata", "name"},
+                        {"metadata", "labels", "appstudio.redhat.com/component"},
+                        {"metadata", "labels", "appstudio.redhat.com/application"},
+                },
+                templateAbleFields: [][]string{
+                        {"spec", "image", "name"},
+                },
+                ownerNameField: []string{"metadata", "labels", "appstudio.redhat.com/component"},
+                ownerAPI: apischema.GroupVersionKind{
+                        Group: "appstudio.redhat.com", Version: "v1alpha1", Kind: "Component",
+                },
+        },
+        {
+                supportedAPIs: []apischema.GroupVersionKind{
+                        {Group: "appstudio.redhat.com", Version: "v1beta2", Kind: "IntegrationTestScenario"},
+                },
+                templateAbleNameFields: [][]string{
+                        {"metadata", "name"},
+                        {"spec", "application"},
+                        // TODO: allow templating of spec.params
+                        // which is an array of name/value pairs. This would require changes to
+                        // applyResourceTemplate and possibly validateResourceNameFields
+                },
+                templateAbleFields: [][]string{
+                        {"spec", "params", "[]", "value"},
+                        {"spec", "resolverRef", "params", "[]", "value"},
+                        {"spec", "contexts", "[]", "name"},
+                        {"spec", "contexts", "[]", "description"},
+                },
+                ownerNameField: []string{"spec", "application"},
+                ownerAPI: apischema.GroupVersionKind{
+                        Group: "appstudio.redhat.com", Version: "v1alpha1", Kind: "Application",
+                },
+                ownerIsController:    true,
+                ownerDeletionBlocked: true,
+        },
+        {
+                supportedAPIs: []apischema.GroupVersionKind{
+                        {Group: "appstudio.redhat.com", Version: "v1alpha1", Kind: "ReleasePlan"},
+                },
+                templateAbleNameFields: [][]string{
+                        {"metadata", "name"},
+                        {"metadata", "labels", "release.appstudio.openshift.io/releasePlanAdmission"},
+                        {"spec", "application"},
+                },
+                templateAbleFields: [][]string{
+                        {"spec", "data", "releaseNotes", "references", "[]"},
+                },
+                ownerNameField: []string{"spec", "application"},
+                ownerAPI: apischema.GroupVersionKind{
+                        Group: "appstudio.redhat.com", Version: "v1alpha1", Kind: "Application",
+                },
+                ownerIsController:    true,
+                ownerDeletionBlocked: true,
+        },
+}
+
+// Make the resources to be owned by the given ProjectDevelopmentStream as
+// defined by the given  ProjectDevelopmentStreamTemplate
+func MkResources(
+        pds projctlv1beta1.ProjectDevelopmentStream,
+        pdst projctlv1beta1.ProjectDevelopmentStreamTemplate,
+) ([]*unstructured.Unstructured, error) <span class="cov0" title="0">{
+        resources := make([]*unstructured.Unstructured, 0, len(pdst.Spec.Resources))
+        // unhandledTemplates is used to detect unsupported resource types that may
+        // have been included in the template
+        unhandledTemplates := make(map[int]bool, len(pdst.Spec.Resources))
+        for i := range pdst.Spec.Resources </span><span class="cov0" title="0">{
+                unhandledTemplates[i] = true
+        }</span>
+        <span class="cov0" title="0">templateVarValues, err := getVarValues(pdst.Spec.Variables, pds.Spec.Template.Values)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">for _, srt := range supportedResourceTypes </span><span class="cov0" title="0">{
+                for i, unstructuredObj := range pdst.Spec.Resources </span><span class="cov0" title="0">{
+                        if !findGVK(srt.supportedAPIs, unstructuredObj.GroupVersionKind()) </span><span class="cov0" title="0">{
+                                continue</span>
+                        }
+                        <span class="cov0" title="0">unhandledTemplates[i] = false
+                        resource := unstructuredObj.Unstructured.DeepCopy()
+                        resource.SetNamespace(pds.GetNamespace())
+
+                        // Remove untouchable fields from the template before processing
+                        removeUntouchableFields(resource, srt.untouchableFields)
+
+                        if err := applyResourceTemplate(resource, srt.templateAbleNameFields, templateVarValues); err != nil </span><span class="cov0" title="0">{
+                                return nil, err
+                        }</span>
+                        <span class="cov0" title="0">if err := validateResourceNameFields(resource, srt.templateAbleNameFields); err != nil </span><span class="cov0" title="0">{
+                                return nil, err
+                        }</span>
+                        <span class="cov0" title="0">if err := applyResourceTemplate(resource, srt.templateAbleFields, templateVarValues); err != nil </span><span class="cov0" title="0">{
+                                return nil, err
+                        }</span>
+                        <span class="cov0" title="0">if srt.ownerNameField != nil </span><span class="cov0" title="0">{
+                                ownerName, ok, err := unstructured.NestedString(resource.Object, srt.ownerNameField...)
+                                if ok &amp;&amp; err == nil </span><span class="cov0" title="0">{
+                                        // If we can't find the owner name field, we just skip
+                                        // setting an owner
+                                        ownership.SetWithoutUid(
+                                                resource,
+                                                srt.ownerAPI,
+                                                ownerName,
+                                                srt.ownerIsController,
+                                                srt.ownerDeletionBlocked,
+                                        )
+                                }</span>
+                        }
+                        <span class="cov0" title="0">resources = append(resources, resource)</span>
+                }
+        }
+        <span class="cov0" title="0">for i, unstructuredObj := range pdst.Spec.Resources </span><span class="cov0" title="0">{
+                if unhandledTemplates[i] </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf(
+                                "unsupported resource type in template: %s",
+                                unstructuredObj.GroupVersionKind(),
+                        )
+                }</span>
+        }
+        <span class="cov0" title="0">return resources, nil</span>
+}
+
+func findGVK(GVKs []apischema.GroupVersionKind, someGVK apischema.GroupVersionKind) bool <span class="cov0" title="0">{
+        for _, aGVK := range GVKs </span><span class="cov0" title="0">{
+                if someGVK == aGVK </span><span class="cov0" title="0">{
+                        return true
+                }</span>
+        }
+        <span class="cov0" title="0">return false</span>
+}
+
+// Given a resource, a list of template-able fields and template variable values,
+// treat the fields as text/template templates and execute them generating new
+// values for said fields
+func applyResourceTemplate(
+        resource *unstructured.Unstructured,
+        templateAbleFields [][]string,
+        templateVarValues map[string]string,
+) error <span class="cov0" title="0">{
+        for _, path := range templateAbleFields </span><span class="cov0" title="0">{
+                err := applyFieldTemplate(resource.Object, path, templateVarValues)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("error applying resource template: %s", err)
+                }</span>
+        }
+        <span class="cov0" title="0">return nil</span>
+}
+
+var nameFieldPattern = regexp.MustCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
+
+// Given a resource and a list of field paths, check that the value in those
+// paths conform to the k8s resource name rules and return a non-nil error if
+// then don't.
+func validateResourceNameFields(
+        resource *unstructured.Unstructured,
+        nameFields [][]string,
+) error <span class="cov8" title="1">{
+        for _, path := range nameFields </span><span class="cov8" title="1">{
+                err := applyFieldFunc(resource.Object, path, func(value string) (string, bool, error) </span><span class="cov8" title="1">{
+                        if !nameFieldPattern.MatchString(value) </span><span class="cov8" title="1">{
+                                return "", false, fmt.Errorf(
+                                        "invalid resource name value '%s' for resource field '%s'. "+
+                                                "Consider using the 'hyphenize' template function",
+                                        value,
+                                        strings.Join(path, "."),
+                                )
+                        }</span>
+                        <span class="cov8" title="1">return "", false, nil</span>
+                })
+                <span class="cov8" title="1">if err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+// Get the values for the given template variables using the given values or
+// the defaults if values ar missing
+func getVarValues(
+        vars []projctlv1beta1.ProjectDevelopmentStreamTemplateVariable,
+        vals []projctlv1beta1.ProjectDevelopmentStreamSpecTemplateValue,
+) (values map[string]string, err error) <span class="cov0" title="0">{
+        values = map[string]string{}
+        givenValues := map[string]string{}
+        for _, val := range vals </span><span class="cov0" title="0">{
+                givenValues[val.Name] = val.Value
+        }</span>
+        <span class="cov0" title="0">for _, variable := range vars </span><span class="cov0" title="0">{
+                if givenValue, ok := givenValues[variable.Name]; ok </span><span class="cov0" title="0">{
+                        values[variable.Name] = givenValue
+                }</span> else<span class="cov0" title="0"> if variable.DefaultValue != nil </span><span class="cov0" title="0">{
+                        var value string
+                        if value, err = executeTemplate(*variable.DefaultValue, values); err != nil </span><span class="cov0" title="0">{
+                                break</span>
+                        }
+                        <span class="cov0" title="0">values[variable.Name] = value</span>
+                } else<span class="cov0" title="0"> {
+                        err = fmt.Errorf(
+                                "template variable '%s' is missing a value and default not defined",
+                                variable.Name,
+                        )
+                        break</span>
+                }
+        }
+        <span class="cov0" title="0">return</span>
+}
+
+// removeUntouchableFields removes the specified fields from the resource object.
+// This is used to ensure that untouchable fields from templates are not included
+// in generated resources.
+func removeUntouchableFields(resource *unstructured.Unstructured, untouchableFields [][]string) <span class="cov0" title="0">{
+        for _, fieldPath := range untouchableFields </span><span class="cov0" title="0">{
+                unstructured.RemoveNestedField(resource.Object, fieldPath...)
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package template
+
+import (
+        "fmt"
+        "slices"
+
+        "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+)
+
+// A function type for applying changes to string fields. Accepts the field
+// current value as a string and returns a new value, a boolean indicating if to
+// apply the new value to the original object and an error value that should be
+// returned from the calling function if not nil
+type fieldFunc func(string) (string, bool, error)
+
+// Given a possibly nested map structure, navigate to a particular scalar value
+// using path - a list of string keys. Then treat that value as a template and
+// apply it in-place while using the provided values.
+func applyFieldTemplate(obj map[string]any, path []string, values map[string]string) error <span class="cov8" title="1">{
+        return applyFieldFunc(obj, path, func(valueTemplate string) (string, bool, error) </span><span class="cov8" title="1">{
+                value, err := executeTemplate(valueTemplate, values)
+                return value, true, err
+        }</span>)
+}
+
+func applyFieldFunc(obj map[string]any, path []string, ff fieldFunc) error <span class="cov8" title="1">{
+        if ind := slices.Index(path, "[]"); ind != -1 </span><span class="cov8" title="1">{
+                if ind == len(path)-1 </span><span class="cov8" title="1">{
+                        return applySliceFieldFunc(obj, path[:ind], ff)
+                }</span>
+                <span class="cov8" title="1">return processNestedSlice(obj, path, ff)</span>
+        } else<span class="cov8" title="1"> {
+                return applyPlainFieldFunc(obj, path, ff)
+        }</span>
+}
+
+func applyPlainFieldFunc(obj map[string]any, path []string, ff fieldFunc) error <span class="cov8" title="1">{
+        existingValue, ok, err := unstructured.NestedString(obj, path...)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("error reading object: %s", err)
+        }</span>
+        <span class="cov8" title="1">if !ok </span><span class="cov8" title="1">{
+                // If the path is not found in the structure, we ignore it
+                return nil
+        }</span>
+        <span class="cov8" title="1">value, set, err := ff(existingValue)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if set </span><span class="cov8" title="1">{
+                err = unstructured.SetNestedField(obj, value, path...)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("error updating object: %s", err)
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func applySliceFieldFunc(obj map[string]any, path []string, ff fieldFunc) error <span class="cov8" title="1">{
+        exValArr, ok, err := unstructured.NestedStringSlice(obj, path...)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("error reading object: %s", err)
+        }</span>
+        <span class="cov8" title="1">if !ok </span><span class="cov0" title="0">{
+                // If the path is not found in the structure, we ignore it
+                return nil
+        }</span>
+        <span class="cov8" title="1">valueArr := make([]string, len(exValArr))
+        var setAny bool
+        for i, existingValue := range exValArr </span><span class="cov8" title="1">{
+                value, set, err := ff(existingValue)
+                if err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+                <span class="cov8" title="1">if set </span><span class="cov8" title="1">{
+                        valueArr[i] = value
+                }</span> else<span class="cov8" title="1"> {
+                        valueArr[i] = existingValue
+                }</span>
+                <span class="cov8" title="1">setAny = setAny || set</span>
+        }
+        <span class="cov8" title="1">if setAny </span><span class="cov8" title="1">{
+                err = unstructured.SetNestedStringSlice(obj, valueArr, path...)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("error updating object: %s", err)
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func processNestedSlice(obj map[string]any, path []string, ff fieldFunc) error <span class="cov8" title="1">{
+        ind := slices.Index(path, "[]")
+        nestedSlice, found, err := unstructured.NestedSlice(obj, path[:ind]...)
+        // May return error if same key points to map in one place and to string in another
+        if !found || err != nil </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+        <span class="cov8" title="1">updatedNestedSlice := make([]any, len(nestedSlice))
+
+        for i, nestedObj := range nestedSlice </span><span class="cov8" title="1">{
+                err := applyFieldFunc(nestedObj.(map[string]any), path[ind+1:], ff)
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov8" title="1">updatedNestedSlice[i] = nestedObj</span>
+        }
+
+        <span class="cov8" title="1">err = unstructured.SetNestedSlice(obj, updatedNestedSlice, path[:ind]...)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package eventr
+
+import (
+        "fmt"
+        "slices"
+
+        "github.com/go-logr/logr"
+        "k8s.io/apimachinery/pkg/runtime"
+        "k8s.io/client-go/tools/record"
+)
+
+const (
+        MaxLoggingLevel = 0
+        ReasonLogKey    = "eventReason"
+)
+
+// A logr implementation generating K8s events
+type eventr struct {
+        recorder      record.EventRecorder
+        subject       runtime.Object
+        keysAndValues []any
+}
+
+func NewEventr(recorder record.EventRecorder, subject runtime.Object) logr.Logger <span class="cov8" title="1">{
+        return logr.Logger{}.WithSink(&amp;eventr{recorder: recorder, subject: subject})
+}</span>
+
+func (r *eventr) Init(info logr.RuntimeInfo) {<span class="cov0" title="0">}</span>
+
+func (r *eventr) Enabled(level int) bool <span class="cov8" title="1">{
+        return level &lt;= MaxLoggingLevel
+}</span>
+
+func (r *eventr) Info(level int, msg string, keysAndValues ...any) <span class="cov8" title="1">{
+        reason := GetValueForKey(keysAndValues, ReasonLogKey, GetValueForKey(r.keysAndValues, ReasonLogKey, "Info"))
+        r.recorder.Event(r.subject, "Normal", reason, msg)
+}</span>
+
+func (r *eventr) Error(err error, msg string, keysAndValues ...any) <span class="cov8" title="1">{
+        reason := GetValueForKey(keysAndValues, ReasonLogKey, GetValueForKey(r.keysAndValues, ReasonLogKey, "Info"))
+        r.recorder.Eventf(r.subject, "Warning", reason, "%s: %s", msg, err.Error())
+}</span>
+
+func (r *eventr) WithValues(keysAndValues ...any) logr.LogSink <span class="cov8" title="1">{
+        return &amp;eventr{
+                recorder:      r.recorder,
+                subject:       r.subject,
+                keysAndValues: append(keysAndValues, r.keysAndValues...),
+        }
+}</span>
+
+func (r *eventr) WithName(name string) logr.LogSink <span class="cov0" title="0">{
+        return r
+}</span>
+
+func GetValueForKey(keysAndValues []any, key any, defVal string) string <span class="cov8" title="1">{
+        value := defVal
+        if idx := slices.Index(keysAndValues, key); idx &gt; -1 &amp;&amp; idx+1 &lt; len(keysAndValues) </span><span class="cov8" title="1">{
+                switch rawVal := keysAndValues[idx+1].(type) </span>{
+                case string:<span class="cov8" title="1">
+                        value = rawVal</span>
+                case fmt.Stringer:<span class="cov0" title="0">
+                        value = rawVal.String()</span>
+                }
+        }
+        <span class="cov8" title="1">return value</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
