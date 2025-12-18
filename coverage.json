@@ -1,5 +1,5 @@
 {
-  "run_url": "https://github.com/hmariset/coverage-dashboard/actions/runs/20290993903",
+  "run_url": "https://github.com/hmariset/coverage-dashboard/actions/runs/20325461225",
   "data": [
     {
       "repo": "konflux-ci/caching",
@@ -53,14 +53,9 @@
     },
     {
       "repo": "konflux-ci/konflux-ci",
-      "coverage": 81.6,
-      "status": "ok",
-      "packages": [
-        {
-          "package": "github.com/konflux-ci/konflux-ci/pkg/konftool/filestore",
-          "coverage": 81.6
-        }
-      ]
+      "coverage": null,
+      "status": "failed",
+      "packages": []
     },
     {
       "repo": "konflux-ci/notification-service",
