@@ -89,7 +89,7 @@
 				
 				<option value="file16">github.com/konflux-ci/release-service/git/references.go (81.2%)</option>
 				
-				<option value="file17">github.com/konflux-ci/release-service/loader/loader.go (83.8%)</option>
+				<option value="file17">github.com/konflux-ci/release-service/loader/loader.go (83.1%)</option>
 				
 				<option value="file18">github.com/konflux-ci/release-service/loader/loader_mock.go (63.0%)</option>
 				
@@ -4901,7 +4901,7 @@ func (l *loader) GetMatchingReleasePlans(ctx context.Context, cli client.Client,
                 }
 
                 <span class="cov8" title="1">labelValue, found := releasePlans.Items[i].GetLabels()[metadata.ReleasePlanAdmissionLabel]
-                if found &amp;&amp; labelValue != releasePlanAdmission.Name </span><span class="cov8" title="1">{
+                if found &amp;&amp; labelValue != releasePlanAdmission.Name </span><span class="cov0" title="0">{
                         // Remove ReleasePlans whose label doesn't match the ReleasePlanAdmission name
                         releasePlans.Items = append(releasePlans.Items[:i], releasePlans.Items[i+1:]...)
                 }</span>
