@@ -1,5 +1,5 @@
 {
-  "run_url": "https://github.com/hmariset/coverage-dashboard/actions/runs/21658455420",
+  "run_url": "https://github.com/hmariset/coverage-dashboard/actions/runs/21699116763",
   "data": [
     {
       "repo": "konflux-ci/caching",
@@ -93,7 +93,7 @@
     },
     {
       "repo": "konflux-ci/release-service",
-      "coverage": 87.3,
+      "coverage": 87.4,
       "status": "ok",
       "packages": [
         {
@@ -126,7 +126,7 @@
         },
         {
           "package": "github.com/konflux-ci/release-service/api/v1alpha1/webhooks/author",
-          "coverage": 89.3
+          "coverage": 91.4
         },
         {
           "package": "github.com/konflux-ci/release-service/controllers/release",
