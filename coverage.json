@@ -1,5 +1,5 @@
 {
-  "run_url": "https://github.com/hmariset/coverage-dashboard/actions/runs/22293411934",
+  "run_url": "https://github.com/hmariset/coverage-dashboard/actions/runs/22337070981",
   "data": [
     {
       "repo": "konflux-ci/caching",
@@ -74,7 +74,7 @@
     },
     {
       "repo": "konflux-ci/project-controller",
-      "coverage": 60.3,
+      "coverage": 59.3,
       "status": "ok",
       "packages": [
         {
@@ -87,7 +87,7 @@
         },
         {
           "package": "github.com/konflux-ci/project-controller/internal/controller",
-          "coverage": 76.5
+          "coverage": 74.1
         }
       ]
     },
@@ -141,12 +141,12 @@
           "coverage": 78.6
         },
         {
-          "package": "github.com/konflux-ci/release-service/tekton/utils",
-          "coverage": 94.6
-        },
-        {
           "package": "github.com/konflux-ci/release-service/syncer",
           "coverage": 90.0
+        },
+        {
+          "package": "github.com/konflux-ci/release-service/tekton/utils",
+          "coverage": 94.6
         },
         {
           "package": "github.com/konflux-ci/release-service/api/v1alpha1/webhooks/release",
