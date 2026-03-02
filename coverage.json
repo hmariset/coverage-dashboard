@@ -1,5 +1,5 @@
 {
-  "run_url": "https://github.com/hmariset/coverage-dashboard/actions/runs/22536218511",
+  "run_url": "https://github.com/hmariset/coverage-dashboard/actions/runs/22561777921",
   "data": [
     {
       "repo": "konflux-ci/caching",
@@ -117,24 +117,24 @@
           "coverage": 79.2
         },
         {
-          "package": "github.com/konflux-ci/release-service/api/v1alpha1/webhooks/releaseplan",
-          "coverage": 90.0
-        },
-        {
           "package": "github.com/konflux-ci/release-service/api/v1alpha1/webhooks/releaseplanadmission",
           "coverage": 96.2
+        },
+        {
+          "package": "github.com/konflux-ci/release-service/api/v1alpha1/webhooks/releaseplan",
+          "coverage": 90.0
         },
         {
           "package": "github.com/konflux-ci/release-service/api/v1alpha1/webhooks/author",
           "coverage": 91.4
         },
         {
-          "package": "github.com/konflux-ci/release-service/controllers/release",
-          "coverage": 83.7
-        },
-        {
           "package": "github.com/konflux-ci/release-service/metadata",
           "coverage": 100.0
+        },
+        {
+          "package": "github.com/konflux-ci/release-service/controllers/release",
+          "coverage": 83.7
         },
         {
           "package": "github.com/konflux-ci/release-service/loader",
